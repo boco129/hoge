@@ -43,6 +43,12 @@
 　アーカイブ
 　　古い、またはもはや必要とされないドキュメンテーションをどのように保管または廃棄するか
 
+import pandas as pd
+
+def replace_ban(df: pd.DataFrame, column: str) -> pd.DataFrame:
+    # '{数字}番'を'{数字}-'に変換（ただし、「番」の直後に「地」、「町」、「号」が続く場合は除く）
+    df[column] = df[column].str.replace('(\d+)番(?![地町号])', r'\1-', regex=True)
+    return df
 
 
 
