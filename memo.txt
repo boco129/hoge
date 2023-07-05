@@ -55,6 +55,49 @@ def prepend_prefecture(df: pd.DataFrame, prefecture_column: str, address_column:
                                   if not row[address_column].startswith(row[prefecture_column]) else row[address_column], axis=1)
     return df
 
+import pandas as pd
+import re
+
+def replace_address_format(df: pd.DataFrame, column: str) -> pd.DataFrame:
+    # "{数字}丁目{数字}番{数字}号"の形式を"{数字}-{数字}-{数字}"に変換
+    df[column] = df[column].apply(lambda x: re.sub('(\d+)丁目(\d+)番(\d+)号', r'\1-\2-\3', x))
+
+    # "{数字}丁目{数字}番"の形式を"{数字}-{数字}"に変換
+    df[column] = df[column].apply(lambda x: re.sub('(\d+)丁目(\d+)番', r'\1-\2', x))
+
+    # "{数字}丁目{数字}号"の形式を"{数字}-{数字}"に変換
+    df[column] = df[column].apply(lambda x: re.sub('(\d+)丁目(\d+)号', r'\1-\2', x))
+
+    # "{数字}番{数字}号"の形式を"{数字}-{数字}"に変換
+    df[column] = df[column].apply(lambda x: re.sub('(\d+)番(\d+)号', r'\1-\2', x))
+
+    # "{数字}丁目"の形式を"{数字}"に変換
+    df[column] = df[column].apply(lambda x: re.sub('(\d+)丁目', r'\1', x))
+
+    # "{数字}番"の形式を"{数字}"に変換
+    df[column] = df[column].apply(lambda x: re.sub('(\d+)番', r'\1', x))
+
+    # "{数字}号"の形式を"{数字}"に変換
+    df[column] = df[column].apply(lambda x: re.sub('(\d+)号', r'\1', x))
+
+    return df
+
+
+import pandas as pd
+import jaconv
+
+def convert_kana(df: pd.DataFrame, column: str) -> pd.DataFrame:
+    df[column] = df[column].apply(jaconv.kata2kata, kana_from='H', kana_to='K')
+    return df
+
+import pandas as pd
+
+def convert_kana(df: pd.DataFrame, column: str) -> pd.DataFrame:
+    # 変換テーブル
+    trans_table = str.maketrans('ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮ', 'あいうえおつやゆよわアイウエオツヤユヨワ')
+    # 変換
+    df[column] = df[column].apply(lambda x: x.translate(trans_table))
+    return df
 
 
 
