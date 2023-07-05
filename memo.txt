@@ -50,6 +50,10 @@ def replace_ban(df: pd.DataFrame, column: str) -> pd.DataFrame:
     df[column] = df[column].str.replace('(\d+)番(?![地町号])', r'\1-', regex=True)
     return df
 
+def prepend_prefecture(df: pd.DataFrame, prefecture_column: str, address_column: str) -> pd.DataFrame:
+    df[address_column] = df.apply(lambda row: row[prefecture_column] + row[address_column]
+                                  if not row[address_column].startswith(row[prefecture_column]) else row[address_column], axis=1)
+    return df
 
 
 
