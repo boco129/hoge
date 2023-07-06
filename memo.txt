@@ -99,6 +99,17 @@ def convert_kana(df: pd.DataFrame, column: str) -> pd.DataFrame:
     df[column] = df[column].apply(lambda x: x.translate(trans_table))
     return df
 
+import pandas as pd
+import re
+
+def normalize_parentheses(df: pd.DataFrame, column: str) -> pd.DataFrame:
+    # ①両括弧（）がある場合：両括弧を削除し、括弧内にあった文字も削除する
+    df[column] = df[column].apply(lambda x: re.sub(r'\(.*?\)', '', x))
+    # ②右括弧)のみある場合：右括弧と前方にスペースが現れるまですべての文字を削除する
+    df[column] = df[column].apply(lambda x: re.sub(r'.*\)', '', x))
+    # ③左括弧(のみある場合：左括弧と後方にスペースが現れるまですべての文字を削除する
+    df[column] = df[column].apply(lambda x: re.sub(r'\(.*', '', x))
+    return df
 
 
 
