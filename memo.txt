@@ -114,9 +114,8 @@ def normalize_parentheses(df: pd.DataFrame, column: str) -> pd.DataFrame:
     df[column] = df[column].apply(lambda x: re.sub(r'[\(（].*', '', x))
     return df
 
-def remove_dakuten_and_convert_small_to_large(text: str) -> str:
-    # 半角カナの濁点・半濁点と小文字の変換マップ
-    conversion_map = {
+def simplify_kana(text: str) -> str:
+    trans_map = str.maketrans({
         'ｶﾞ': 'ｶ', 'ｷﾞ': 'ｷ', 'ｸﾞ': 'ｸ', 'ｹﾞ': 'ｹ', 'ｺﾞ': 'ｺ',
         'ｻﾞ': 'ｻ', 'ｼﾞ': 'ｼ', 'ｽﾞ': 'ｽ', 'ｾﾞ': 'ｾ', 'ｿﾞ': 'ｿ',
         'ﾀﾞ': 'ﾀ', 'ﾁﾞ': 'ﾁ', 'ﾂﾞ': 'ﾂ', 'ﾃﾞ': 'ﾃ', 'ﾄﾞ': 'ﾄ',
@@ -124,33 +123,10 @@ def remove_dakuten_and_convert_small_to_large(text: str) -> str:
         'ﾊﾟ': 'ﾊ', 'ﾋﾟ': 'ﾋ', 'ﾌﾟ': 'ﾌ', 'ﾍﾟ': 'ﾍ', 'ﾎﾟ': 'ﾎ',
         'ｧ': 'ｱ', 'ｨ': 'ｲ', 'ｩ': 'ｳ', 'ｪ': 'ｴ', 'ｫ': 'ｵ',
         'ｯ': 'ﾂ', 'ｬ': 'ﾔ', 'ｭ': 'ﾕ', 'ｮ': 'ﾖ',
-    }
+    })
 
-    # 半角カナの濁点・半濁点を外す・小文字を大文字に変換
-    result = []
-    skip_next = False
-
-    for i, char in enumerate(text):
-        if skip_next:
-            skip_next = False
-            continue
-
-        if i < len(text) - 1 and text[i:i + 2] in conversion_map:
-            result.append(conversion_map[text[i:i + 2]])
-            skip_next = True
-        elif char in conversion_map:
-            result.append(conversion_map[char])
-        else:
-            result.append(char)
-
-    return ''.join(result)
+    return text.translate(trans_map)
 
 
 text = "ﾊﾟｲｿﾝﾌﾟﾛｸﾞﾗﾐﾝｸﾞｨｩｪｫ"
-print(remove_dakuten_and_convert_small_to_large(text))  # ｱｲｿﾝﾌﾛｸﾞﾗﾐﾝｸﾞｲｳｴｵ
-
-
-
-
-
-
+print(simplify_kana(text))  # ｱｲｿﾝﾌﾛｸﾞﾗﾐﾝｸﾞｲｳｴｵ
