@@ -186,30 +186,34 @@ def calculate_similarity_for_subchunk(subchunk_pair):
     similarity_matrix = cosine_similarity(vec1, vec2)
     return np.diag(similarity_matrix)
 
-def process_subchunks(chunks, calc_cols):
-    subchunk_pairs = [(np.stack(chunk[calc_cols[0]].values), np.stack(chunk[calc_cols[1]].values)) for chunk in chunks]
+def process_subchunks(subchunks, calc_cols):
+    subchunk_pairs = [(np.stack(subchunk[calc_cols[0]].values), np.stack(subchunk[calc_cols[1]].values)) for subchunk in subchunks]
     
     # 利用可能なCPUコア数に基づいてmax_workersを設定
-    max_workers = min(len(chunks), os.cpu_count() or 1)
+    max_workers = min(len(subchunks), os.cpu_count() or 1)
     
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         # mapを使用してより効率的な並列処理を実行
-        results = list(tqdm(executor.map(calculate_similarity_for_subchunk, subchunk_pairs), total=len(chunks)))
+        results = list(tqdm(executor.map(calculate_similarity_for_subchunk, subchunk_pairs), total=len(subchunks)))
     
     # 結果を結合して返す
     return np.concatenate(results)
 
 def calc_similarity(df, calc_cols=["特徴ベクトルA", "特徴ベクトルB"]):
     df["score"] = 0.0
-    chunk_size = 1000  # より大きなチャンクサイズを検討する
+    chunk_size = 1000  # 大きなチャンクサイズ
+    subchunk_size = 100  # サブチャンクサイズ
     
     for start in tqdm(range(0, len(df), chunk_size)):
         end = min(start + chunk_size, len(df))
         chunk = df.iloc[start:end]
-        subchunks = [chunk.iloc[i:i+chunk_size] for i in range(0, len(chunk), chunk_size)]
+        
+        # 1000件のチャンクをさらに100件ごとのサブチャンクに分割
+        subchunks = [chunk.iloc[i:i+subchunk_size] for i in range(0, len(chunk), subchunk_size)]
         
         chunk_results = process_subchunks(subchunks, calc_cols)
         
+        # 結果を元のDataFrameに統合
         df.loc[start:end-1, "score"] = chunk_results
     
     return df
