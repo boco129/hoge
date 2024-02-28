@@ -152,3 +152,70 @@ address = "神奈川県横浜市西区1-2-3"
 truncated_address = truncate_after_city(address)
 print(truncated_address)  # -> 神奈川県横浜市
 
+
+
+import pandas as pd
+import numpy as np
+
+# 特徴ベクトルの長さ
+vector_length = 768
+
+# データフレームの行数
+num_rows = 100000
+
+# ランダムな特徴ベクトルの生成
+np.random.seed(42)  # 結果の再現性を保証
+feature_vectors_a = [np.random.rand(vector_length).tolist() for _ in range(num_rows)]
+feature_vectors_b = [np.random.rand(vector_length).tolist() for _ in range(num_rows)]
+
+# データフレームの作成
+df = pd.DataFrame({
+    "特徴ベクトルA": feature_vectors_a,
+    "特徴ベクトルB": feature_vectors_b
+})
+
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+import pandas as pd
+from concurrent.futures import ProcessPoolExecutor
+from tqdm.auto import tqdm
+
+def calculate_similarity_for_subchunk(subchunk, calc_cols):
+    vec1 = np.stack(subchunk[calc_cols[0]].values)
+    vec2 = np.stack(subchunk[calc_cols[1]].values)
+    similarity_matrix = cosine_similarity(vec1, vec2)
+    return np.diag(similarity_matrix)
+
+def process_subchunks(chunks, calc_cols):
+    # 100件ごとのサブチャンクの処理結果を格納するリスト
+    subchunk_results = []
+    with ProcessPoolExecutor(max_workers=2) as executor:
+        # 各サブチャンクに対して並列処理を実行
+        futures = [executor.submit(calculate_similarity_for_subchunk, subchunk, calc_cols) for subchunk in chunks]
+        for future in futures:
+            subchunk_results.extend(future.result())
+    return subchunk_results
+
+def calc_similarity(df, calc_cols=["特徴ベクトルA", "特徴ベクトルB"]):
+    df["score"] = 0.0  # 結果を格納するための列を追加
+    chunk_size = 1000
+    subchunk_size = 100
+
+    for start in tqdm(range(0, len(df), chunk_size)):
+        end = min(start + chunk_size, len(df))
+        chunk = df.iloc[start:end]
+        subchunks = [chunk.iloc[i:i+subchunk_size] for i in range(0, len(chunk), subchunk_size)]
+
+        # 各1000件のチャンクをさらに100件ごとに分割して並列処理
+        chunk_results = process_subchunks(subchunks, calc_cols)
+
+        # 結果を元のDataFrameに統合
+        df.loc[start:end-1, "score"] = chunk_results
+
+    return df
+
+# calc_similarity関数の実行
+result_df = calc_similarity(df, ["特徴ベクトルA", "特徴ベクトルB"])
+
+# 結果の確認
+result_df.head()
